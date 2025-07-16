@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Course Review Analysis Tool</title>
+    <!-- This link points to your new stylesheet -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔥Course Review Analyzer</h1>
+
+      <div class="form-container">
+        <form method="POST" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="text">Enter Text to Analyze:</label>
+            <textarea
+              id="text"
+              name="text"
+              placeholder="Type your text here for sentiment analysis..."
+              rows="4"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="file">Or Upload a File:</label>
+            <input type="file" id="file" name="file" accept=".csv,.txt" />
+            <div class="file-info">
+              Supported formats: CSV (with 'text' column), TXT (one text per
+              line)
+            </div>
+          </div>
+
+          <button type="submit" class="btn">Analyze Sentiment</button>
+        </form>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Processing your request...</p>
+      </div>
+
+      <!-- Error Message -->
+      {% if error_message %}
+      <div class="error-message fade-in">
+        <strong>Error:</strong> {{ error_message }}
+      </div>
+      {% endif %}
+
+      <!-- Results Section -->
+      {% if results %}
+      <div class="results-section fade-in">
+        <h2>📊 Analysis Results</h2>
+        <div class="table-container scrollable-results ">
+          <table>
+            <thead>
+              <tr>
+                <th>Text</th>
+                <th>Keywords</th>
+                <th>Sentiment</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in results %}
+              <tr>
+                <td class="text-cell">{{ item.text }}</td>
+                <td class="keywords-cell">
+                  {% for keyword in item.keywords %}
+                  <span class="keyword-tag">{{ keyword }}</span>
+                  {% endfor %}
+                </td>
+                <td class="label-cell">
+                  <span class="sentiment-{{ item.label.lower() }}">
+                    {{ item.label }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {% if global_keywords %}
+      <div class="analytics-section fade-in">
+        <h2>🔑 Top Keywords</h2>
+        <div class="analytics-card">
+            {% for kw in global_keywords %}
+            <span class="keyword-tag">{{ kw }}</span>
+            {% endfor %}
+        </div>
+      </div>
+      {% endif %} {% endif %}
+
+      <!-- Analytics Section -->
+      {% if aggregate and aggregate.total > 0 %}
+      <div class="analytics-section fade-in">
+        <h2>📈 Analytics Dashboard</h2>
+        <div class="analytics-grid">
+          <div class="analytics-card">
+            <h3>Total Statements</h3>
+            <p class="stat-value">{{ aggregate.total }}</p>
+          </div>
+
+          <div class="analytics-card">
+            <h3>Sentiment Distribution</h3>
+            {% for label, count in aggregate.count.items() %}
+            <p>
+              <strong>{{ label }}:</strong> {{ count }} ({{
+              aggregate.percent[label] }})
+            </p>
+            {% endfor %}
+          </div>
+
+          {% if aggregate.most_common %}
+          <div class="analytics-card">
+            <h3>Dominant Sentiment</h3>
+            <p class="stat-value sentiment-{{ aggregate.most_common.lower() }}">
+              {{ aggregate.most_common }}
+            </p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- API Documentation -->
+      <div class="analytics-section">
+        <h2>🔌 API Usage</h2>
+        <div class="analytics-card">
+          <h3>Programmatic Access</h3>
+          <p>POST text to <code>/api/analyze</code> with JSON:</p>
+          <p>POST text to <code>/api/analyze-file</code> with JSON:</p>
+          <pre><code>{
+  "text": "Your text here"
+}</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const form = document.querySelector("form");
+        const loading = document.getElementById("loading");
+        const fileInput = document.getElementById("file");
+        const textArea = document.getElementById("text");
+
+        form.addEventListener("submit", function (e) {
+          const hasText = textArea.value.trim().length > 0;
+          const hasFile = fileInput.files.length > 0;
+          if (!hasText && !hasFile) {
+            e.preventDefault();
+            alert("Please enter text or upload a file");
+            return;
+          }
+          loading.style.display = "block";
+        });
+
+        fileInput.addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          const fileInfo = document.querySelector(".file-info");
+          if (file) {
+            fileInfo.innerHTML = `Selected: <strong>${file.name}</strong> (${(
+              file.size / 1024
+            ).toFixed(1)} KB)`;
+          } else {
+            fileInfo.innerHTML = "Supported formats: CSV (with 'text' column), TXT (one text per line)";
+          }
+        });
+        
+        const results = document.querySelectorAll(".fade-in");
+        results.forEach((element, index) => {
+          setTimeout(() => {
+            element.style.opacity = "1";
+            element.style.transform = "translateY(0)";
+          }, index * 150);
+        });
+      });
+    </script>
+
+  </body>
+</html>

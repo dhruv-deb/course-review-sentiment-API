@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# VS Code settings
+.vscode/
+
+# Jupyter Notebook checkpoints
+# .ipynb_checkpoints/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Model files
+# *.pkl
+
+# Local NLTK data
+# nltk_data/
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# Python egg metadata
+*.egg-info/
+dist/
+build/
+
+# Render or Railway deployment configs (optional to ignore)
+render.yaml
+
+#run dev sh
+run_dev.sh
