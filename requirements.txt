@@ -13,7 +13,7 @@ kiwisolver==1.4.8
 MarkupSafe==3.0.2
 matplotlib==3.10.3
 nltk==3.8.1
-numpy==1.26.4
+numpy
 packaging==25.0
 pandas
 pillow==11.3.0
@@ -21,7 +21,7 @@ pyparsing==3.2.3
 python-dateutil==2.9.0.post0
 pytz==2025.2
 regex==2024.11.6
-scikit-learn==1.4.2
+scikit-learn
 scipy==1.16.0
 setuptools==80.9.0
 six==1.17.0
