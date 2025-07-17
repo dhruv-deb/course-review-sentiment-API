@@ -3,8 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Course Review Analysis Tool</title>
-    <!-- This link points to your new stylesheet -->
+    <title>Sentiment Analysis Tool</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
@@ -16,7 +15,7 @@
   </head>
   <body>
     <div class="container">
-      <h1>🔥Course Review Analyzer</h1>
+      <h1>🔥 Sentiment Analyzer</h1>
 
       <div class="form-container">
         <form method="POST" enctype="multipart/form-data">
@@ -43,24 +42,21 @@
         </form>
       </div>
 
-      <!-- Loading State -->
       <div class="loading" id="loading">
         <div class="spinner"></div>
         <p>Processing your request...</p>
       </div>
 
-      <!-- Error Message -->
       {% if error_message %}
       <div class="error-message fade-in">
         <strong>Error:</strong> {{ error_message }}
       </div>
       {% endif %}
 
-      <!-- Results Section -->
       {% if results %}
       <div class="results-section fade-in">
         <h2>📊 Analysis Results</h2>
-        <div class="table-container scrollable-results ">
+        <div class="table-container scrollable-results">
           <table>
             <thead>
               <tr>
@@ -89,19 +85,33 @@
           </table>
         </div>
       </div>
+      {% endif %}
 
-      {% if global_keywords %}
-      <div class="analytics-section fade-in">
-        <h2>🔑 Top Keywords</h2>
-        <div class="analytics-card">
-            {% for kw in global_keywords %}
-            <span class="keyword-tag">{{ kw }}</span>
-            {% endfor %}
-        </div>
+      {% if top_positive_keywords or top_negative_keywords %}
+      <div class="keyword-analytics-section fade-in">
+          {% if top_positive_keywords %}
+          <div class="analytics-card keyword-card">
+              <h3>Top Positive Keywords</h3>
+              <div class="keywords-container">
+                  {% for kw in top_positive_keywords %}
+                  <span class="keyword-tag positive">{{ kw }}</span>
+                  {% endfor %}
+              </div>
+          </div>
+          {% endif %}
+          {% if top_negative_keywords %}
+          <div class="analytics-card keyword-card">
+              <h3>Top Negative Keywords</h3>
+              <div class="keywords-container">
+                  {% for kw in top_negative_keywords %}
+                  <span class="keyword-tag negative">{{ kw }}</span>
+                  {% endfor %}
+              </div>
+          </div>
+          {% endif %}
       </div>
-      {% endif %} {% endif %}
+      {% endif %}
 
-      <!-- Analytics Section -->
       {% if aggregate and aggregate.total > 0 %}
       <div class="analytics-section fade-in">
         <h2>📈 Analytics Dashboard</h2>
@@ -110,7 +120,6 @@
             <h3>Total Statements</h3>
             <p class="stat-value">{{ aggregate.total }}</p>
           </div>
-
           <div class="analytics-card">
             <h3>Sentiment Distribution</h3>
             {% for label, count in aggregate.count.items() %}
@@ -120,7 +129,6 @@
             </p>
             {% endfor %}
           </div>
-
           {% if aggregate.most_common %}
           <div class="analytics-card">
             <h3>Dominant Sentiment</h3>
@@ -133,19 +141,38 @@
       </div>
       {% endif %}
 
-      <!-- API Documentation -->
-      <div class="analytics-section">
+      <!-- API Usage Section - Restored -->
+      <div class="analytics-section fade-in">
         <h2>🔌 API Usage</h2>
-        <div class="analytics-card">
-          <h3>Programmatic Access</h3>
-          <p>POST text to <code>/api/analyze</code> with JSON:</p>
-          <p>POST text to <code>/api/analyze-file</code> with JSON:</p>
-          <pre><code>{
-  "text": "Your text here"
+        <div class="analytics-card api-docs">
+            <!-- Text Analysis API -->
+            <div class="api-endpoint">
+                <h3>Analyze Single Text</h3>
+                <p>Send a <code>POST</code> request to <code>/api/analyze-text</code> with a JSON body.</p>
+                <div class="code-block-wrapper">
+                    <pre><code id="api-text-code">{
+  "text": "This is a wonderful experience!"
 }</code></pre>
+                    <button class="copy-btn" data-target="api-text-code">Copy</button>
+                </div>
+            </div>
+
+            <!-- File Analysis API -->
+            <div class="api-endpoint">
+                <h3>Analyze a File</h3>
+                <p>Send a <code>POST</code> request to <code>/api/analyze-file</code> using <code>multipart/form-data</code>.</p>
+                 <div class="code-block-wrapper">
+                    <pre><code id="api-file-code"># Example using cURL:
+curl -X POST -F "file=@/path/to/reviews.csv" http://127.0.0.1:5000/api/analyze-file</code></pre>
+                    <button class="copy-btn" data-target="api-file-code">Copy</button>
+                </div>
+            </div>
         </div>
       </div>
     </div>
+      
+      
+    
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {

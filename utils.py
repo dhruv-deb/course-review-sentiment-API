@@ -8,11 +8,6 @@ import numpy as np
 from collections import Counter
 import nltk
 
-# # Ensure resources are downloaded
-# nltk.download('punkt', quiet=True)
-# nltk.download('wordnet', quiet=True)
-# nltk.download('omw-1.4', quiet=True)
-# nltk.download('stopwords', quiet=True)
 nltk.data.path.append('./nltk_data')
 logger = logging.getLogger(__name__)
 
@@ -30,7 +25,6 @@ def clean_and_lemmatize(comment):
     comment = CLEAN_REGEX.sub(' ', comment)
     comment = comment.lower().split()
     
-    # Lemmatize each word if not a stopword
     comment = [lemmatizer.lemmatize(word) for word in comment 
                if word not in combined_stopwords and len(word) > 1]
     
@@ -62,23 +56,13 @@ def extract_keywords(text, top_k=5):
         logger.error(f"Error extracting keywords: {e}")
         return []
 
-def extract_top_keywords(text_list, top_k_per_text=5, top_k_global=300):
-    """Extract keywords for each text and globally"""
-    try:
-        top_keywords_per_text = []
-        all_keywords = []
-
-        for text in text_list:
-            kws = extract_keywords(text, top_k=top_k_per_text)
-            top_keywords_per_text.append(kws)
-            all_keywords.extend(kws)
-
-        global_top = [word for word, _ in Counter(all_keywords).most_common(top_k_global)]
-        return top_keywords_per_text, global_top
-    
-    except Exception as e:
-        logger.error(f"Error in extract_top_keywords: {e}")
-        return [], []
+def extract_top_keywords(text_list, top_k_per_text=5):
+    """Extract keywords for each text"""
+    top_keywords_per_text = []
+    for text in text_list:
+        kws = extract_keywords(text, top_k=top_k_per_text)
+        top_keywords_per_text.append(kws)
+    return top_keywords_per_text
 
 def predict_sentiment(comment, model, cv, scaler):
     """Predict sentiment with error handling"""
@@ -90,12 +74,6 @@ def predict_sentiment(comment, model, cv, scaler):
         comment_vector = cv.transform([cleaned_comment])
         comment_scaled = scaler.transform(comment_vector)
         prediction = model.predict(comment_scaled)
-        
-        if hasattr(model, 'predict_proba'):
-            proba = model.predict_proba(comment_scaled)[0]
-            confidence = max(proba)
-        else:
-            confidence = 0.5
         
         sentiment = "Positive" if prediction[0] == 1 else "Negative"
         return sentiment, float(prediction[0])
@@ -120,13 +98,20 @@ def get_aggregates(results):
         "most_common": label_count.most_common(1)[0][0] if label_count else None
     }
 
-def get_keywords_json(results, global_keywords):
-    """Build keyword usage analytics for frontend"""
-    keyword_counts = Counter()
-    for res in results:
-        keyword_counts.update(res.get("keywords", []))
-    
-    return {
-        "global_top_keywords": global_keywords,
-        "keyword_counts": dict(keyword_counts)
-    }
+def separate_keywords_by_sentiment(results, top_k=50):
+    """Separates keywords into positive and negative lists based on sentiment."""
+    positive_keywords = []
+    negative_keywords = []
+
+    for result in results:
+        # Ensure 'keywords' key exists and is a list
+        if 'keywords' in result and isinstance(result['keywords'], list):
+            if result.get('label') == 'Positive':
+                positive_keywords.extend(result['keywords'])
+            elif result.get('label') == 'Negative':
+                negative_keywords.extend(result['keywords'])
+
+    top_positive = [word for word, _ in Counter(positive_keywords).most_common(top_k)]
+    top_negative = [word for word, _ in Counter(negative_keywords).most_common(top_k)]
+
+    return top_positive, top_negative

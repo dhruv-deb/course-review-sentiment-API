@@ -37,7 +37,7 @@ dist/
 build/
 
 # Render or Railway deployment configs (optional to ignore)
-render.yaml
+# render.yaml
 
 #run dev sh
 run_dev.sh
