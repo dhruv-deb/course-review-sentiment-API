@@ -8,3 +8,14 @@ services:
     envVars:
       - key: NLTK_DATA
         value: nltk_data
+
+services:
+  - type: web
+    name: sentiment-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    plan: free
+    envVars:
+      - key: NLTK_DATA
+        value: nltk_data
