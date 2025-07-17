@@ -147,8 +147,11 @@ course-review-sentiment-API/
 │   ├── model_destree.pkl
 │   ├── countVectorizer.pkl
 │   └── scaler.pkl
+├── nltk_data/                  # Contains the nltk_data
 ├── static/                 # CSS and other static assets
 │   └── style.css
+├── notebook/                 # Contains the jupyter notebook with for training reference
+│   └── Data_Exploration_&_Modelling.ipynb
 ├── templates/              # HTML templates for the frontend
 │   └── index.html
 ├── app.py                  # Main Flask application file
