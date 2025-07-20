@@ -3,38 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sentiment Analysis Tool</title>
+    <title>SentiMind - Sentiment Analysis</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
     />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>"
-    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
   </head>
   <body>
     <div class="container">
-      <h1>🔥 Sentiment Analyzer</h1>
+      <h1>SentiMind</h1>
+      <p class="subtitle">Nuanced Sentiment Analysis at a Glance</p>
 
       <div class="form-container">
         <form method="POST" enctype="multipart/form-data">
           <div class="form-group">
-            <label for="text">Enter Text to Analyze:</label>
+            <label for="text">Analyze a single piece of text</label>
             <textarea
               id="text"
               name="text"
-              placeholder="Type your text here for sentiment analysis..."
-              rows="4"
+              placeholder="Type or paste your text here..."
+              rows="5"
             ></textarea>
           </div>
 
+          <div class="divider"><span>OR</span></div>
+
           <div class="form-group">
-            <label for="file">Or Upload a File:</label>
-            <input type="file" id="file" name="file" accept=".csv,.txt" />
+            <label for="file">Upload a file for batch analysis</label>
+            <div class="file-upload-wrapper">
+                <input type="file" id="file" name="file" accept=".csv,.txt" />
+                <div class="file-upload-placeholder">
+                    <span class="file-upload-icon">&#8681;</span>
+                    <span class="file-upload-text">Click to browse or drag & drop</span>
+                </div>
+            </div>
             <div class="file-info">
-              Supported formats: CSV (with 'text' column), TXT (one text per
-              line)
+              Supported: CSV (with 'text' column), TXT (one review per line)
             </div>
           </div>
 
@@ -44,7 +51,7 @@
 
       <div class="loading" id="loading">
         <div class="spinner"></div>
-        <p>Processing your request...</p>
+        <p>Analyzing...</p>
       </div>
 
       {% if error_message %}
@@ -55,7 +62,7 @@
 
       {% if results %}
       <div class="results-section fade-in">
-        <h2>📊 Analysis Results</h2>
+        <h2>Analysis Results</h2>
         <div class="table-container scrollable-results">
           <table>
             <thead>
@@ -114,20 +121,22 @@
 
       {% if aggregate and aggregate.total > 0 %}
       <div class="analytics-section fade-in">
-        <h2>📈 Analytics Dashboard</h2>
+        <h2>Analytics Dashboard</h2>
         <div class="analytics-grid">
           <div class="analytics-card">
-            <h3>Total Statements</h3>
+            <h3>Total Reviews</h3>
             <p class="stat-value">{{ aggregate.total }}</p>
           </div>
           <div class="analytics-card">
             <h3>Sentiment Distribution</h3>
+            <div class="distribution-container">
             {% for label, count in aggregate.count.items() %}
             <p>
               <strong>{{ label }}:</strong> {{ count }} ({{
               aggregate.percent[label] }})
             </p>
             {% endfor %}
+            </div>
           </div>
           {% if aggregate.most_common %}
           <div class="analytics-card">
@@ -141,9 +150,9 @@
       </div>
       {% endif %}
 
-      <!-- API Usage Section - Restored -->
+      <!-- API Usage Section -->
       <div class="analytics-section fade-in">
-        <h2>🔌 API Usage</h2>
+        <h2>API Usage Guide</h2>
         <div class="analytics-card api-docs">
             <!-- Text Analysis API -->
             <div class="api-endpoint">
@@ -167,49 +176,86 @@ curl -X POST -F "file=@/path/to/reviews.csv" http://127.0.0.1:5000/api/analyze-f
                     <button class="copy-btn" data-target="api-file-code">Copy</button>
                 </div>
             </div>
+            
+            <!-- LLM Summary Prompt -->
+            <div class="api-endpoint">
+                <h3>LLM Summary Prompt Suggestion</h3>
+                <p>Use the keywords from the <code>/api/analyze-file</code> response to generate a comprehensive summary with an LLM.</p>
+                 <div class="code-block-wrapper">
+                    <pre><code id="api-summary-code">"As a review analyst, generate a summary of customer sentiment. 
+The most common positive themes were [positive keywords], 
+and the most common negative themes were [negative keywords]."</code></pre>
+                    <button class="copy-btn" data-target="api-summary-code">Copy</button>
+                </div>
+            </div>
         </div>
       </div>
     </div>
       
-      
-    
-
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         const form = document.querySelector("form");
         const loading = document.getElementById("loading");
         const fileInput = document.getElementById("file");
         const textArea = document.getElementById("text");
+        const fileUploadText = document.querySelector(".file-upload-text");
+        const fileInfo = document.querySelector(".file-info");
 
         form.addEventListener("submit", function (e) {
           const hasText = textArea.value.trim().length > 0;
           const hasFile = fileInput.files.length > 0;
           if (!hasText && !hasFile) {
             e.preventDefault();
-            alert("Please enter text or upload a file");
+            alert("Please enter text or upload a file to analyze.");
             return;
           }
-          loading.style.display = "block";
+          loading.style.display = "flex";
         });
 
         fileInput.addEventListener("change", function (e) {
           const file = e.target.files[0];
-          const fileInfo = document.querySelector(".file-info");
           if (file) {
-            fileInfo.innerHTML = `Selected: <strong>${file.name}</strong> (${(
-              file.size / 1024
-            ).toFixed(1)} KB)`;
+            fileUploadText.textContent = `Selected: ${file.name}`;
+            fileInfo.innerHTML = `File size: <strong>${(file.size / 1024).toFixed(1)} KB</strong>`;
           } else {
-            fileInfo.innerHTML = "Supported formats: CSV (with 'text' column), TXT (one text per line)";
+            fileUploadText.textContent = "Click to browse or drag & drop";
+            fileInfo.innerHTML = "Supported: CSV (with 'text' column), TXT (one review per line)";
           }
         });
         
+        // Fade in animations for results
         const results = document.querySelectorAll(".fade-in");
         results.forEach((element, index) => {
           setTimeout(() => {
             element.style.opacity = "1";
             element.style.transform = "translateY(0)";
-          }, index * 150);
+          }, index * 100);
+        });
+
+        // Copy button functionality
+        const copyButtons = document.querySelectorAll('.copy-btn');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-target');
+                const codeElement = document.getElementById(targetId);
+                const textToCopy = codeElement.innerText;
+
+                // A temporary textarea is used to perform the copy command
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = textToCopy;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempTextArea);
+
+                // Visual feedback
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 1500);
+            });
         });
       });
     </script>
