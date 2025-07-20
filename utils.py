@@ -42,7 +42,7 @@ def extract_keywords(text, top_k=5):
             max_features=100,
             ngram_range=(1, 2),
             min_df=1,
-            max_df=1
+            max_df=1.0
         )
         
         tfidf_matrix = tfidf.fit_transform([cleaned])
