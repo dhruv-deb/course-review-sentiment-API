@@ -1,38 +1,62 @@
 import re
 import logging
+from nltk.stem.porter import PorterStemmer
 from nltk.stem import WordNetLemmatizer
-from nltk.corpus import stopwords, wordnet
+from nltk.corpus import stopwords
 from wordcloud import STOPWORDS as WORDCLOUD_STOPWORDS
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 from collections import Counter
 import nltk
 
-nltk.data.path.append('./nltk_data')
+try:
+    stopwords.words('english')
+    nltk.data.find('corpora/wordnet.zip')
+except LookupError:
+    nltk.download('stopwords')
+    nltk.download('wordnet')
+
 logger = logging.getLogger(__name__)
 
+stemmer = PorterStemmer()
 lemmatizer = WordNetLemmatizer()
+
 nltk_stopwords = set(stopwords.words('english'))
 combined_stopwords = nltk_stopwords.union(WORDCLOUD_STOPWORDS)
 
 CLEAN_REGEX = re.compile(r'[^a-zA-Z\s]')
 
-def clean_and_lemmatize(comment):
-    """Clean and lemmatize text"""
+def clean_and_stem(comment):
+    """
+    Cleans and STEMS text to match the preprocessing from the training notebook.
+    This is used ONLY for the sentiment prediction model.
+    """
     if not comment or not isinstance(comment, str):
         return ""
     
-    comment = CLEAN_REGEX.sub(' ', comment)
-    comment = comment.lower().split()
+    review = re.sub('[^a-zA-Z]', ' ', comment)
+    review = review.lower().split()
+    review = [stemmer.stem(word) for word in review if not word in combined_stopwords]
+    return ' '.join(review)
+
+def clean_and_lemmatize(comment):
+    """
+    Cleans and LEMMATIZES text. This is used for keyword extraction to produce
+    readable, complete words.
+    """
+    if not comment or not isinstance(comment, str):
+        return ""
     
-    comment = [lemmatizer.lemmatize(word) for word in comment 
-               if word not in combined_stopwords and len(word) > 1]
-    
-    return ' '.join(comment)
+    review = re.sub('[^a-zA-Z]', ' ', comment)
+    review = review.lower().split()
+    review = [lemmatizer.lemmatize(word) for word in review if not word in combined_stopwords and len(word) > 1]
+    return ' '.join(review)
+
 
 def extract_keywords(text, top_k=5):
-    """Extract keywords using TF-IDF for a single text"""
+    """Extract keywords using TF-IDF. Uses lemmatization for readable output."""
     try:
+        # Use the lemmatizing function for cleaner keywords
         cleaned = clean_and_lemmatize(text)
         if not cleaned:
             return []
@@ -57,22 +81,22 @@ def extract_keywords(text, top_k=5):
         return []
 
 def extract_top_keywords(text_list, top_k_per_text=5):
-    """Extract keywords for each text"""
-    top_keywords_per_text = []
-    for text in text_list:
-        kws = extract_keywords(text, top_k=top_k_per_text)
-        top_keywords_per_text.append(kws)
-    return top_keywords_per_text
+    """Extract keywords for each text in a list."""
+    return [extract_keywords(text, top_k=top_k_per_text) for text in text_list]
 
 def predict_sentiment(comment, model, cv, scaler):
-    """Predict sentiment with error handling"""
+    """
+    Predicts sentiment. Uses stemming to match the model's training process.
+    """
     try:
-        cleaned_comment = clean_and_lemmatize(comment)
+        # Use the stemming function for prediction
+        cleaned_comment = clean_and_stem(comment)
         if not cleaned_comment:
             return "Neutral", 0
         
         comment_vector = cv.transform([cleaned_comment])
         comment_scaled = scaler.transform(comment_vector)
+        
         prediction = model.predict(comment_scaled)
         
         sentiment = "Positive" if prediction[0] == 1 else "Negative"
@@ -83,11 +107,11 @@ def predict_sentiment(comment, model, cv, scaler):
         return "Error", 0
 
 def get_aggregates(results):
-    """Calculate aggregated statistics"""
+    """Calculate aggregated statistics from a list of results."""
     if not results:
         return {"total": 0, "count": {}, "percent": {}, "most_common": None}
     
-    label_count = Counter([r["label"] for r in results])
+    label_count = Counter([r["label"] for r in results if r["label"] != "Error"])
     total = len(results)
     percent = {k: f"{(v / total) * 100:.1f}%" for k, v in label_count.items()}
     
@@ -104,7 +128,6 @@ def separate_keywords_by_sentiment(results, top_k=50):
     negative_keywords = []
 
     for result in results:
-        # Ensure 'keywords' key exists and is a list
         if 'keywords' in result and isinstance(result['keywords'], list):
             if result.get('label') == 'Positive':
                 positive_keywords.extend(result['keywords'])
