@@ -15,7 +15,7 @@
   <body>
     <div class="container">
       <h1>SentiMind</h1>
-      <p class="subtitle">Nuanced Sentiment Analysis at a Glance</p>
+      <p class="subtitle">Nuanced Sentiment Analysis on Course Reviews at a Glance</p>
 
       <div class="form-container">
         <form method="POST" enctype="multipart/form-data">
@@ -166,7 +166,6 @@
                 </div>
             </div>
 
-            <!-- File Analysis API -->
             <div class="api-endpoint">
                 <h3>Analyze a File</h3>
                 <p>Send a <code>POST</code> request to <code>/api/analyze-file</code> using <code>multipart/form-data</code>.</p>
@@ -177,7 +176,6 @@ curl -X POST -F "file=@/path/to/reviews.csv" http://127.0.0.1:5000/api/analyze-f
                 </div>
             </div>
             
-            <!-- LLM Summary Prompt -->
             <div class="api-endpoint">
                 <h3>LLM Summary Prompt Suggestion</h3>
                 <p>Use the keywords from the <code>/api/analyze-file</code> response to generate a comprehensive summary with an LLM.</p>
@@ -223,7 +221,6 @@ and the most common negative themes were [negative keywords]."</code></pre>
           }
         });
         
-        // Fade in animations for results
         const results = document.querySelectorAll(".fade-in");
         results.forEach((element, index) => {
           setTimeout(() => {
@@ -232,7 +229,6 @@ and the most common negative themes were [negative keywords]."</code></pre>
           }, index * 100);
         });
 
-        // Copy button functionality
         const copyButtons = document.querySelectorAll('.copy-btn');
         copyButtons.forEach(button => {
             button.addEventListener('click', () => {
@@ -240,7 +236,6 @@ and the most common negative themes were [negative keywords]."</code></pre>
                 const codeElement = document.getElementById(targetId);
                 const textToCopy = codeElement.innerText;
 
-                // A temporary textarea is used to perform the copy command
                 const tempTextArea = document.createElement('textarea');
                 tempTextArea.value = textToCopy;
                 document.body.appendChild(tempTextArea);
@@ -248,7 +243,6 @@ and the most common negative themes were [negative keywords]."</code></pre>
                 document.execCommand('copy');
                 document.body.removeChild(tempTextArea);
 
-                // Visual feedback
                 button.textContent = 'Copied!';
                 button.classList.add('copied');
                 setTimeout(() => {

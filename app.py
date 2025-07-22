@@ -6,6 +6,7 @@ import pandas as pd
 from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
+from functools import wraps  # Import 'wraps'
 from utils import (
     extract_top_keywords,
     predict_sentiment,
@@ -21,7 +22,6 @@ nltk.data.path.append(NLTK_DATA_DIR)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- Flask App Initialization ---
 app = Flask(__name__)
 CORS(app)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
@@ -36,7 +36,19 @@ except Exception as e:
     logger.error(f"Fatal Error: Could not load models. {e}")
     raise
 
-# --- Main UI Route ---
+
+API_KEY = os.environ.get("API_KEY", "changeme")
+
+def require_api_key(f):
+    """Decorator to protect routes with an API key."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        key = request.headers.get("x-api-key")
+        if not key or key != API_KEY:
+            return jsonify({"error": "Unauthorized", "message": "A valid API key must be provided in the 'x-api-key' header."}), 401
+        return f(*args, **kwargs)
+    return decorated
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     results = []
@@ -70,7 +82,7 @@ def index():
 
             if not error_message and texts:
                 top_keywords_per_text = extract_top_keywords(texts)
-                for i, text in enumerate(texts[:1000]): # Limit processing for performance
+                for i, text in enumerate(texts[:1000]):
                     sentiment, _ = predict_sentiment(text, model, cv, scaler)
                     display_text = text[:200] + '...' if len(text) > 200 else text
                     results.append({
@@ -97,6 +109,7 @@ def index():
 # --- API Routes ---
 
 @app.route("/api/analyze-text", methods=["POST"])
+@require_api_key  # Secure this endpoint
 def api_analyze_text():
     """Analyzes a single text string from a JSON payload."""
     try:
@@ -105,11 +118,9 @@ def api_analyze_text():
             return jsonify({"error": "Missing 'text' field"}), 400
 
         text = data['text']
-        # Note: extract_top_keywords expects a list
         keywords = extract_top_keywords([text])[0] 
         sentiment, label = predict_sentiment(text, model, cv, scaler)
 
-        # Separate keywords based on the single result
         positive_kws = keywords if sentiment == 'Positive' else []
         negative_kws = keywords if sentiment == 'Negative' else []
 
@@ -128,6 +139,7 @@ def api_analyze_text():
         return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/api/analyze-file", methods=["POST"])
+@require_api_key 
 def api_analyze_file():
     """Analyzes a full file (CSV or TXT)."""
     if 'file' not in request.files:
@@ -156,7 +168,6 @@ def api_analyze_file():
         if not texts:
             return jsonify({"error": "No valid text to process in the file."}), 400
 
-        # Process all texts to get results
         results = []
         top_keywords_per_text = extract_top_keywords(texts)
         for i, text in enumerate(texts):
@@ -167,7 +178,6 @@ def api_analyze_file():
                 "label": sentiment
             })
 
-        # Now, separate the keywords based on the full results
         top_positive_keywords, top_negative_keywords = separate_keywords_by_sentiment(results)
 
         return jsonify({

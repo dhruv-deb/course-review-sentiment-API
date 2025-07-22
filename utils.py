@@ -25,6 +25,13 @@ nltk_stopwords = set(stopwords.words('english'))
 combined_stopwords = nltk_stopwords.union(WORDCLOUD_STOPWORDS)
 
 CLEAN_REGEX = re.compile(r'[^a-zA-Z\s]')
+tfidf = TfidfVectorizer(
+    stop_words='english',
+    max_features=100,
+    ngram_range=(1, 2),
+    min_df=1,
+    max_df=1.0
+)
 
 def clean_and_stem(comment):
     """
@@ -61,13 +68,7 @@ def extract_keywords(text, top_k=5):
         if not cleaned:
             return []
         
-        tfidf = TfidfVectorizer(
-            stop_words='english',
-            max_features=100,
-            ngram_range=(1, 2),
-            min_df=1,
-            max_df=1.0
-        )
+        tfidf
         
         tfidf_matrix = tfidf.fit_transform([cleaned])
         feature_names = tfidf.get_feature_names_out()
